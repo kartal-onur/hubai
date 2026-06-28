@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-29
+
+### Changed
+
+- Distribution: the repo is public and the supported install path is the git URL (`npm i github:kartal-onur/hubai#v0.1.2`), which needs no token. GitHub Packages requires a token to install even public packages, so it is no longer the recommended path for token-free CI (e.g. Netlify).
+- `dist/` is now committed so git-URL installs work with no build step on the consumer (`files` still limits the published/packed set to `dist`).
+
 ## [0.1.1] - 2026-06-29
 
 ### Fixed

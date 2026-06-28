@@ -1,0 +1,47 @@
+/* Optional HubAI styles: slide-in, spinner, scrollbar, hover affordances.
+   Import once in your app: import "@kartal-onur/hubai/styles.css";
+   The components render fine without this file (no animation/hover only). */
+
+@keyframes hubai-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.hubai-root {
+  animation: hubai-slide-in 0.2s ease-out;
+}
+
+@keyframes hubai-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.hubai-intro-card {
+  animation: hubai-slide-up 0.2s ease-out;
+}
+
+@keyframes hubai-spin {
+  to { transform: rotate(360deg); }
+}
+.hubai-spin {
+  animation: hubai-spin 0.8s linear infinite;
+}
+
+.hubai-messages {
+  scrollbar-width: thin;
+}
+.hubai-messages::-webkit-scrollbar {
+  width: 6px;
+}
+.hubai-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.hubai-icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+.hubai-link-btn:hover {
+  opacity: 0.9;
+}
+.hubai-send-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}

@@ -4,20 +4,24 @@ Step by step for adding HubAI to a Next.js App Router app backed by Supabase.
 
 ## 1. Install
 
-Add `.npmrc` to the app root:
+Pin the public GitHub source tarball in `package.json` (token-free, works on any
+host including Netlify):
 
+```jsonc
+{
+  "dependencies": {
+    "@kartal-onur/hubai": "https://github.com/kartal-onur/hubai/archive/refs/tags/v0.1.2.tar.gz"
+  }
+}
 ```
-@kartal-onur:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Provide `GITHUB_TOKEN` with `read:packages` in your shell and in the deploy
-environment (for Netlify: add it as a build environment variable; the committed
-`.npmrc` expands it at build time).
 
 ```bash
-npm install @kartal-onur/hubai
+npm install
 ```
+
+No `.npmrc`, no token. The tarball ships `dist`, so there is no build step on the
+consumer. (GitHub Packages would require a token even for a public package, and
+Netlify reserves `GITHUB_TOKEN`, so the tarball URL is the reliable path.)
 
 ## 2. Transpile the package
 

@@ -23,17 +23,29 @@ hook and a themable panel ship in the box.
 
 ## Install
 
-This is a private package on GitHub Packages. Add an `.npmrc` to the consuming
-project (and provide a `GITHUB_TOKEN` with `read:packages`):
+The repo is public, so the simplest install is a token-free GitHub source
+tarball pinned to a tag. Add it to your `package.json`:
 
-```
-@kartal-onur:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```jsonc
+{
+  "dependencies": {
+    "@kartal-onur/hubai": "https://github.com/kartal-onur/hubai/archive/refs/tags/v0.1.2.tar.gz"
+  }
+}
 ```
 
 ```bash
-npm install @kartal-onur/hubai
+npm install
 ```
+
+No registry config, no `.npmrc`, no token, on any host (including Netlify). The
+tarball ships `dist`, so there is no build step on the consumer.
+
+> Note: GitHub Packages (`npm.pkg.github.com`) requires a token to install **even
+> for public packages**, and Netlify treats `GITHUB_TOKEN` as a reserved name, so
+> the source-tarball URL is the path that "just works" everywhere. A git-URL pin
+> (`github:kartal-onur/hubai#v0.1.2`) also works, but npm tends to resolve it to
+> `git+ssh`, which fails in CI without an SSH key — prefer the tarball URL.
 
 Peer deps: `@anthropic-ai/sdk` (required). `react` / `react-dom` (only for the
 `/react` subpath). `@supabase/supabase-js` (only for the `/supabase` subpath).

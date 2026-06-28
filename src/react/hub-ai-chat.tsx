@@ -207,7 +207,7 @@ export function HubAIChat(props: HubAIChatProps) {
           <button
             type="button"
             onClick={clear}
-            disabled={messages.length === 0}
+            disabled={messages.length === 0 || isStreaming}
             title={labels.clearTitle}
             aria-label={labels.clearTitle}
             className={cn("hubai-icon-btn", classNames.clearButton)}

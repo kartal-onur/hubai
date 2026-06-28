@@ -3,9 +3,12 @@ import type { SSEEvent } from "../core/sse";
 export type ParsedLine =
   | { type: "event"; event: SSEEvent }
   | { type: "done" }
+  | { type: "parse_error"; raw: string }
   | null;
 
-// Parse a single SSE wire line into an event. Pure + unit-testable.
+// Parse a single SSE wire line into an event. Pure + unit-testable. Returns null
+// for non-data lines (comments/heartbeats) and a distinct parse_error for a data
+// frame whose payload fails to decode, so failures are observable, not silent.
 export function parseSSELine(line: string): ParsedLine {
   if (!line.startsWith("data: ")) return null;
   const data = line.slice(6);
@@ -13,7 +16,7 @@ export function parseSSELine(line: string): ParsedLine {
   try {
     return { type: "event", event: JSON.parse(data) as SSEEvent };
   } catch {
-    return null;
+    return { type: "parse_error", raw: data };
   }
 }
 
@@ -51,6 +54,12 @@ export async function readSSEStream(
       const parsed = parseSSELine(line);
       if (!parsed) continue;
       if (parsed.type === "done") return;
+      if (parsed.type === "parse_error") {
+        if (typeof console !== "undefined") {
+          console.warn("[hubai] dropped malformed SSE frame:", parsed.raw);
+        }
+        continue;
+      }
 
       const event = parsed.event;
       if ("tool_status" in event) {

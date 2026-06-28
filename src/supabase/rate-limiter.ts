@@ -36,11 +36,19 @@ export function supabaseRateLimiter<C extends SupabaseCtx>(
     async check(ctx) {
       const sb = ctx.supabase as AnySupabase;
       const since = new Date(Date.now() - windowMs).toISOString();
-      const { count } = await sb
+      const { count, error } = await sb
         .from(table)
         .select("id", { count: "exact", head: true })
         .eq(userColumn, ctx.userId)
         .gte(createdAtColumn, since);
+      // Fail closed: a query error (RLS, missing table, transient DB issue) must
+      // not silently disable the limiter that backstops API-key abuse and cost.
+      if (error) {
+        if (typeof console !== "undefined") {
+          console.error("[hubai] rate limiter check failed:", error.message ?? error);
+        }
+        return { allowed: false, retryAfterMs: windowMs, message: opts.message };
+      }
       const allowed = (count ?? 0) < opts.limit;
       return {
         allowed,

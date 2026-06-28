@@ -1,5 +1,6 @@
 // Map raw provider errors to a safe, human-readable message. Never leak raw
-// `invalid x-api-key ...` text or stack traces to the client by default.
+// provider/DB error text or stack traces to the client by default; the raw error
+// is logged server-side instead.
 export function mapAnthropicError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   const isAuth =
@@ -7,5 +8,6 @@ export function mapAnthropicError(err: unknown): string {
   if (isAuth) {
     return "The AI service is unavailable (invalid API key). Please contact your administrator.";
   }
-  return `An error occurred: ${raw}`;
+  if (typeof console !== "undefined") console.error("[hubai] error:", raw);
+  return "An unexpected error occurred. Please try again.";
 }

@@ -34,6 +34,12 @@ const randomId = (): string =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
+// An assistant turn can legitimately end with no text (a pure tool/navigate/write
+// turn). The Anthropic API rejects an assistant message with empty content, so
+// such messages must never be sent back or persisted.
+const isSendable = (m: HubAIMessage): boolean =>
+  m.role === "user" || m.content.trim() !== "";
+
 // Headless HubAI client: manages messages, SSE streaming, abort, and optional
 // persistence. UI-framework-agnostic at the protocol layer; render however you like.
 export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
@@ -50,6 +56,7 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
 
   const abortRef = useRef<AbortController | null>(null);
   const hydratedRef = useRef(false);
+  const prevKeyRef = useRef<string | undefined>(storageKey);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const streamingRef = useRef(false);
@@ -65,6 +72,9 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
   }, []);
 
   const clear = useCallback(() => {
+    // Abort any in-flight stream so its updates and refresh callback do not fire
+    // against the cleared conversation.
+    abortRef.current?.abort();
     setMessages([]);
     if (!storageKey) return;
     try {
@@ -74,7 +84,7 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
     }
   }, [storageKey]);
 
-  // Hydrate from storage once.
+  // Hydrate from storage when the key changes (once per key).
   useEffect(() => {
     if (storageKey) {
       try {
@@ -90,11 +100,18 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
     hydratedRef.current = true;
   }, [storageKey]);
 
-  // Persist on change (after hydration, trimmed).
+  // Persist on change (after hydration, trimmed, no empty assistant turns).
   useEffect(() => {
+    // On a storageKey change, skip this commit's write: `messages` still holds
+    // the previous key's data here, and the hydrate effect will load the new key.
+    if (prevKeyRef.current !== storageKey) {
+      prevKeyRef.current = storageKey;
+      return;
+    }
     if (!hydratedRef.current || !storageKey) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-historyLimit)));
+      const toStore = messages.filter(isSendable).slice(-historyLimit);
+      localStorage.setItem(storageKey, JSON.stringify(toStore));
     } catch {
       // ignore quota/access errors
     }
@@ -114,10 +131,10 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
         toolActions: [],
       };
 
-      const apiMessages = [...messagesRef.current, userMessage].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      // Drop any prior empty-content assistant turns so the API does not 400.
+      const apiMessages = [...messagesRef.current, userMessage]
+        .filter(isSendable)
+        .map((m) => ({ role: m.role, content: m.content }));
 
       setMessages((prev) => [...prev, userMessage, assistantMessage]);
       setIsStreaming(true);
@@ -187,7 +204,9 @@ export function useHubAI(options: UseHubAIOptions = {}): UseHubAIResult {
       } finally {
         setIsStreaming(false);
         abortRef.current = null;
-        if (needsRefresh) onRefreshRef.current?.();
+        // Only refresh if the assistant message still exists (not cleared mid-stream).
+        const stillPresent = messagesRef.current.some((m) => m.id === assistantId);
+        if (needsRefresh && stillPresent) onRefreshRef.current?.();
       }
     },
     [endpoint, fetcher, stoppedText]

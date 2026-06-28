@@ -64,6 +64,7 @@ export interface HubAIMessages {
   rateLimited?: string;
   emptyMessages?: string;
   maxLoops?: string;
+  serverError?: string;
 }
 
 export interface ChatMessage {

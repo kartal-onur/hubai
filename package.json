@@ -1,6 +1,6 @@
 {
   "name": "@kartal-onur/hubai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "HubAI — embeddable, framework-agnostic in-app AI assistant engine (Anthropic tool-use + SSE) with a headless React UI and a Supabase adapter. Context-scoped answers, in-app navigation, link replies.",
   "type": "module",
   "private": false,
